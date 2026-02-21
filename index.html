@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Timer with Beep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
+            height: 100%;
+            background: #050505;
+            color: #00e676; /* Neon Green */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Input Controls */
+        .controls {
+            position: absolute;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 10;
+            transition: opacity 0.5s;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input {
+            width: 70px;
+            font-size: 1.5rem;
+            padding: 8px;
+            text-align: center;
+            background: #111;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #00e676;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        #testBtn {
+            background: #444;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+
+        /* BIG TIMER */
+        #timerDisplay {
+            font-size: 20vw; 
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .finished {
+            color: #ff1744 !important; /* Red color */
+            animation: blink 0.5s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.2; }
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls" id="controls">
+        <input type="number" id="h" placeholder="HH">
+        <input type="number" id="m" placeholder="MM">
+        <input type="number" id="s" placeholder="SS">
+        <button onclick="startTimer()">START</button>
+        <button id="testBtn" onclick="playBeep(800, 500)">Test Sound</button>
+    </div>
+
+    <div id="timerDisplay" onclick="showControls()">00:00:00</div>
+    <div class="hint">Click numbers to reset or change time</div>
+
+    <script>
+        let countdown;
+        const display = document.getElementById('timerDisplay');
+        const controls = document.getElementById('controls');
+
+        // Digital Beep Function (No MP3 needed)
+        function playBeep(frequency = 440, duration = 1000) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'square'; // 'sine', 'square', 'sawtooth', 'triangle'
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + (duration / 1000));
+        }
+
+        function startTimer() {
+            clearInterval(countdown);
+            
+            let h = parseInt(document.getElementById('h').value) || 0;
+            let m = parseInt(document.getElementById('m').value) || 0;
+            let s = parseInt(document.getElementById('s').value) || 0;
+
+            let totalSeconds = (h * 3600) + (m * 60) + s;
+
+            if (totalSeconds <= 0) {
+                alert("Pehle time toh set kijiye!");
+                return;
+            }
+
+            controls.style.opacity = "0.1"; // Semi-hide controls
+            display.classList.remove('finished');
+
+            countdown = setInterval(() => {
+                if (totalSeconds <= 0) {
+                    clearInterval(countdown);
+                    display.innerText = "00:00:00";
+                    display.classList.add('finished');
+                    
+                    // Time up hone par 3 baar beep bajega
+                    playBeep(600, 800);
+                    setTimeout(() => playBeep(600, 800), 1000);
+                    setTimeout(() => playBeep(600, 800), 2000);
+                    
+                    return;
+                }
+
+                totalSeconds--;
+
+                let hours = Math.floor(totalSeconds / 3600);
+                let minutes = Math.floor((totalSeconds % 3600) / 60);
+                let seconds = totalSeconds % 60;
+
+                display.innerText = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function showControls() {
+            controls.style.opacity = "1";
+        }
+    </script>
+</body>
+</html>
